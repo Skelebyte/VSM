@@ -15,9 +15,9 @@ This is basically the math stuff I wrote for VGE just all in one .hpp file.
 - Any size matrix with transformations, perpective projection and look at functions
 - General math functions like `ToDegree` and `ToRadian`, `Lerp`, `Min` and `Max`, `Sin`, `Tan` and `Cos`.
 
-## How to use:
+## How to use
 
-Download `vsm.hpp` then include it.
+Download [`vsm.hpp`](https://github.com/Skelebyte/VSM/releases) then include it.
 
 ## Example
 
