@@ -1,3 +1,5 @@
+[![wakatime](https://wakatime.com/badge/user/ebdd5199-39f1-41e1-aa46-73f4e53797cb/project/1dcad521-d86d-4822-bbe4-343bef89364f.svg)](https://wakatime.com/badge/user/ebdd5199-39f1-41e1-aa46-73f4e53797cb/project/1dcad521-d86d-4822-bbe4-343bef89364f)
+
 Started September 14, 2026
 
 # Very Simple Math (Library) (VSM)
