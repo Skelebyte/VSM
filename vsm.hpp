@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 
-#define VSM_VERSION_STR "1.0.0"
+#define VSM_VERSION_STR "1.0.1"
 
 namespace vsm {
 
@@ -109,6 +109,14 @@ public:
   }
   static float Dot(const Vector3f &_a, const Vector3f &_b) {
     return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
+  }
+
+  static Vector3f Lerp(const Vector3f &_a, const Vector3f &_b, float _t) {
+    float newX = _a.x + _t * (_b.x - _a.x);
+    float newY = _a.y + _t * (_b.y - _a.y);
+    float newZ = _a.z + _t * (_b.z - _a.z);
+
+    return Vector3f(newX, newY, newZ);
   }
 
   float Length() const { return Mathf::Sqrt(x * x + y * y + z * z); }
@@ -293,6 +301,13 @@ struct Vector2f : Vector<2, float> {
 public:
   static float Dot(const Vector2f &_a, const Vector2f &_b) {
     return _a.x * _b.x + _a.y * _b.y;
+  }
+
+  static Vector2f Lerp(const Vector2f &_a, const Vector2f &_b, float _t) {
+    float newX = _a.x + _t * (_b.x - _a.x);
+    float newY = _a.y + _t * (_b.y - _a.y);
+
+    return Vector2f(newX, newY);
   }
 
   float Length() const { return Mathf::Sqrt(x * x + y * y); }

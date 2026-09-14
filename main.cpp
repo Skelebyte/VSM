@@ -1,16 +1,21 @@
+// other includes...
 #include "vsm.hpp"
-#include <iostream>
-
-#define WIDTH 1920.0f
-#define HEIGHT 1080.0f
-#define ASPECT WIDTH / HEIGHT
 
 int main() {
-  vsm::Matrix<4, 4> projection;
-  projection.Perspective(75.0f, ASPECT, 0.01f, 100.0f);
+  // other program code...
 
-  std::cout << "Perspective projection: \n"
-            << projection.ToString() << std::endl;
+  vsm::Vector3f startPos(-10); // x: -10, y: -10, z: -10
+
+  vsm::Vector3f endPos(10); // x: 10, y: 10, z: 10
+
+  vsm::Vector3f pos = startPos;
+
+  while (true) {
+    // typically you would multiply 0.5f by deltaTime
+    pos = vsm::Vector3f::Lerp(pos, endPos, 0.5f);
+
+    // ...
+  }
 
   return 0;
 }
