@@ -12,7 +12,7 @@ This is basically the math stuff I wrote for VGE just all in one .hpp file.
 
 - Vector3 in both integer and float forms
 - Vector2 in both integer and float forms
-- Any size matrix with transformations, perpective projection and look at functions
+- Any size matrix with transformations, perspective projection and look at functions
 - General math functions like `ToDegree` and `ToRadian`, `Lerp`, `Min` and `Max`, `Sin`, `Tan` and `Cos`.
 
 ## How to use

@@ -2,53 +2,62 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <string>
 
-#define VSM_VERSION_STR "1.0.2"
+#define VSM_VERSION_STR "1.0.3"
 
 namespace vsm {
 
 struct Mathf {
-  static float ToRadians(const float _degrees) {
-    const float result = _degrees * static_cast<float>(M_PI) / 180.0f;
+  template <typename T> static T ToRadians(const T _degrees) {
+    // make sure noone is sneaking a Vector or something in
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
 
-    assert(result == result); // NaN check
+    const T result = _degrees * static_cast<T>(M_PI) / static_cast<T>(180.0f);
 
-    return result;
-  }
-  static double ToRadians(const double _degrees) {
-    const double result = _degrees * M_PI / 180.0;
-
-    assert(result == result); // NaN check
+    assert(result == result); // NAN check
 
     return result;
   }
 
+  template <typename T> static T ToDegrees(const T _radians) {
+    // make sure nobody is sneaking a Vector or something in
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
 
-  static float ToDegrees(const float _radians) {
-    const float result = _radians / static_cast<float>(M_PI) * 180;
+    const T result = _radians / static_cast<T>(M_PI) * static_cast<T>(180.0f);
 
-    assert(result == result); // NaN check
-
-    return result;
-  }
-
-  static double ToDegrees(const double _radians) {
-    const double result = _radians / M_PI * 180.0;
-
-    assert(result == result); // NaN check
+    assert(result == result); // NAN check
 
     return result;
   }
 
-  static float Lerp(const float _a, const float _b, const float _t) {
+  template <typename T> static T Lerp(const T _a, const T _b, const float _t) {
+    static_assert(
+        typeid(T) != typeid(bool),
+        "You cant use bools in this function! what are you thinking??");
+
+    // in theory this function should work with Vectors, as long as they have
+    // the + and - operators function defined.
     return _a + _t * (_b - _a);
   }
 
   static bool IsZeroApprox(const float _a) { return Mathf::Abs(_a) < 0.00001f; }
 
-  static float Min(const float _a, const float _b) {
+  static bool IsZeroApprox(const double _a) {
+    return Mathf::Abs(_a) < 0.00001f;
+  }
+
+  template <typename T> static T Min(const T _a, const T _b) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+
     if (_a <= _b) {
       return _a;
     } else {
@@ -56,7 +65,11 @@ struct Mathf {
     }
   }
 
-  static float Max(const float _a, const float _b) {
+  template <typename T> static T Max(const T _a, const T _b) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+
     if (_a >= _b) {
       return _a;
     } else {
@@ -64,7 +77,10 @@ struct Mathf {
     }
   }
 
-  static float Abs(const float _a) {
+  template <typename T> static T Abs(const T _a) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
 
     if (_a < 0) {
       return _a - (_a * 2);
@@ -72,26 +88,54 @@ struct Mathf {
       return _a;
     }
   }
-  static float Sin(const float _a) { return std::sin(_a); }
 
-  static float Cos(const float _a) { return std::cos(_a); }
+  template <typename T> static T Sin(const T _a) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
 
-  static float Tan(const float _a) { return std::tan(_a); }
+    return std::sin(_a);
+  }
 
-  static float Sqrt(const float _a) { return std::sqrt(_a); }
+  template <typename T> static T Cos(const T _a) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+
+    return std::cos(_a);
+  }
+
+  template <typename T> static T Tan(const T _a) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+
+    return std::tan(_a);
+  }
+
+  template <typename T> static T Sqrt(const T _a) {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+
+    return std::sqrt(_a);
+  }
 };
 
 template <uint S, typename T = float> struct Vector {
-  virtual ~Vector() = default;
+  using TType = T;
 
+  virtual ~Vector() = default;
   virtual T *GetData() { return data; }
 
 protected:
   T data[S]{};
 };
 
+// TODO attempt to find a workaround for specifying x y z and so on each new
+// vector struct made.
 struct Vector3f : Vector<3, float> {
-  float x, y, z;
+  TType x, y, z;
 
   Vector3f() {
     x = 0.0f;
@@ -99,19 +143,19 @@ struct Vector3f : Vector<3, float> {
     z = 0.0f;
   }
 
-  explicit Vector3f(const float _xyz) {
+  explicit Vector3f(const TType _xyz) {
     x = _xyz;
     y = _xyz;
     z = _xyz;
   }
 
-  Vector3f(const float _x, const float _y, const float _z) {
+  Vector3f(const TType _x, const TType _y, const TType _z) {
     x = _x;
     y = _y;
     z = _z;
   }
 
-  float *GetData() override {
+  TType *GetData() override {
     data[0] = x;
     data[1] = y;
     data[2] = z;
@@ -128,19 +172,11 @@ public:
     return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
   }
 
-  static Vector3f Lerp(const Vector3f &_a, const Vector3f &_b, float _t) {
-    const float newX = _a.x + _t * (_b.x - _a.x);
-    const float newY = _a.y + _t * (_b.y - _a.y);
-    const float newZ = _a.z + _t * (_b.z - _a.z);
-
-    return {newX, newY, newZ};
-  }
-
   [[nodiscard]]  float Length() const {
     return Mathf::Sqrt(x * x + y * y + z * z);
   }
 
-  // TODO add some sort of check to ensure correct result
+
   [[nodiscard]] Vector3f Normalized() const {
     Vector3f norm = *this;
     const float len = this->Length();
@@ -164,6 +200,25 @@ public:
 
   Vector3f operator+(const Vector3f &_other) const {
     return {+_other.x, y + _other.y, z + _other.z};
+  }
+
+  template <typename T> Vector3f operator+(const T _other) const {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+    const T castValue = static_cast<T>(_other);
+    return {x + castValue, y + castValue, z + castValue};
+  }
+
+  // TODO finish these new functions for the vector you can add subtract and
+  // multiply by scalar values
+
+  template <typename T> Vector3f operator-(const T _other) const {
+    static_assert(
+        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
+        "This function only works if T is a float, double, or an integer!");
+    const T castValue = static_cast<T>(_other);
+    return {x - castValue, y - castValue, z - castValue};
   }
 
   Vector3f operator-(const Vector3f &_other) const {
@@ -203,8 +258,8 @@ public:
   }
 };
 
-struct Vector3i : Vector<3, int> {
-  int x, y, z;
+struct Vector3i : Vector<3, int32_t> {
+  TType x, y, z;
 
   Vector3i() {
     x = 0.0f;
@@ -212,13 +267,13 @@ struct Vector3i : Vector<3, int> {
     z = 0.0f;
   }
 
-  explicit Vector3i(const int _xyz) {
+  explicit Vector3i(const TType _xyz) {
     x = _xyz;
     y = _xyz;
     z = _xyz;
   }
 
-  Vector3i(const int _x, const int _y, const int _z) {
+  Vector3i(const TType _x, const TType _y, const TType _z) {
     x = _x;
     y = _y;
     z = _z;
@@ -293,19 +348,19 @@ public:
 };
 
 struct Vector2f : Vector<2, float> {
-  float x, y;
+  TType x, y;
 
   Vector2f() {
     x = 0.0f;
     y = 0.0f;
   }
 
-  explicit Vector2f(const float _xy) {
+  explicit Vector2f(const TType _xy) {
     x = _xy;
     y = _xy;
   }
 
-  Vector2f(const float _x, const float _y) {
+  Vector2f(const TType _x, const TType _y) {
     x = _x;
     y = _y;
   }
@@ -322,16 +377,9 @@ public:
     return _a.x * _b.x + _a.y * _b.y;
   }
 
-  static Vector2f Lerp(const Vector2f &_a, const Vector2f &_b, float _t) {
-    const float newX = _a.x + _t * (_b.x - _a.x);
-    const float newY = _a.y + _t * (_b.y - _a.y);
-
-    return {newX, newY};
-  }
-
   [[nodiscard]] float Length() const { return Mathf::Sqrt(x * x + y * y); }
 
-  // TODO add some sort of check to ensure correct result
+
   [[nodiscard]] Vector2f Normalized() const {
     Vector2f norm = *this;
     const float len = this->Length();
@@ -742,4 +790,3 @@ template <uint R, uint C> struct Matrix {
 };
 
 } // namespace vsm
-
