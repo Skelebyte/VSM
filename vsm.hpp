@@ -1,38 +1,54 @@
-#ifndef VSM_HPP
-#define VSM_HPP
+#pragma once
 
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <string>
 
-#define VSM_VERSION_STR "1.0.1"
+#define VSM_VERSION_STR "1.0.2"
 
 namespace vsm {
 
 struct Mathf {
-  static float ToRadians(float _degrees) {
-    float result = _degrees * M_PI / 180;
+  static float ToRadians(const float _degrees) {
+    const float result = _degrees * static_cast<float>(M_PI) / 180.0f;
+
+    assert(result == result); // NaN check
+
+    return result;
+  }
+  static double ToRadians(const double _degrees) {
+    const double result = _degrees * M_PI / 180.0;
 
     assert(result == result); // NaN check
 
     return result;
   }
 
-  static float ToDegrees(float _radians) {
-    float result = _radians / M_PI * 180;
+
+  static float ToDegrees(const float _radians) {
+    const float result = _radians / static_cast<float>(M_PI) * 180;
 
     assert(result == result); // NaN check
 
     return result;
   }
 
-  static float Lerp(float _a, float _b, float _t) {
+  static double ToDegrees(const double _radians) {
+    const double result = _radians / M_PI * 180.0;
+
+    assert(result == result); // NaN check
+
+    return result;
+  }
+
+  static float Lerp(const float _a, const float _b, const float _t) {
     return _a + _t * (_b - _a);
   }
 
-  static bool IsZeroApprox(float _a) { return Mathf::Abs(_a) < 0.00001f; }
+  static bool IsZeroApprox(const float _a) { return Mathf::Abs(_a) < 0.00001f; }
 
-  static float Min(float _a, float _b) {
+  static float Min(const float _a, const float _b) {
     if (_a <= _b) {
       return _a;
     } else {
@@ -40,7 +56,7 @@ struct Mathf {
     }
   }
 
-  static float Max(float _a, float _b) {
+  static float Max(const float _a, const float _b) {
     if (_a >= _b) {
       return _a;
     } else {
@@ -48,7 +64,7 @@ struct Mathf {
     }
   }
 
-  static float Abs(float _a) {
+  static float Abs(const float _a) {
 
     if (_a < 0) {
       return _a - (_a * 2);
@@ -56,21 +72,22 @@ struct Mathf {
       return _a;
     }
   }
-  static float Sin(float _a) { return std::sin(_a); }
+  static float Sin(const float _a) { return std::sin(_a); }
 
-  static float Cos(float _a) { return std::cos(_a); }
+  static float Cos(const float _a) { return std::cos(_a); }
 
-  static float Tan(float _a) { return std::tan(_a); }
+  static float Tan(const float _a) { return std::tan(_a); }
 
-  static float Sqrt(float _a) { return std::sqrt(_a); }
+  static float Sqrt(const float _a) { return std::sqrt(_a); }
 };
 
 template <uint S, typename T = float> struct Vector {
+  virtual ~Vector() = default;
 
   virtual T *GetData() { return data; }
 
 protected:
-  T data[S];
+  T data[S]{};
 };
 
 struct Vector3f : Vector<3, float> {
@@ -82,13 +99,13 @@ struct Vector3f : Vector<3, float> {
     z = 0.0f;
   }
 
-  Vector3f(float _xyz) {
+  explicit Vector3f(const float _xyz) {
     x = _xyz;
     y = _xyz;
     z = _xyz;
   }
 
-  Vector3f(float _x, float _y, float _z) {
+  Vector3f(const float _x, const float _y, const float _z) {
     x = _x;
     y = _y;
     z = _z;
@@ -104,60 +121,69 @@ struct Vector3f : Vector<3, float> {
 
 public:
   static Vector3f Cross(const Vector3f &_a, const Vector3f &_b) {
-    return Vector3f(_a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
-                    _a.x * _b.y - _a.y * _b.x);
+    return {_a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
+            _a.x * _b.y - _a.y * _b.x};
   }
   static float Dot(const Vector3f &_a, const Vector3f &_b) {
     return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
   }
 
   static Vector3f Lerp(const Vector3f &_a, const Vector3f &_b, float _t) {
-    float newX = _a.x + _t * (_b.x - _a.x);
-    float newY = _a.y + _t * (_b.y - _a.y);
-    float newZ = _a.z + _t * (_b.z - _a.z);
+    const float newX = _a.x + _t * (_b.x - _a.x);
+    const float newY = _a.y + _t * (_b.y - _a.y);
+    const float newZ = _a.z + _t * (_b.z - _a.z);
 
-    return Vector3f(newX, newY, newZ);
+    return {newX, newY, newZ};
   }
 
-  float Length() const { return Mathf::Sqrt(x * x + y * y + z * z); }
+  [[nodiscard]]  float Length() const {
+    return Mathf::Sqrt(x * x + y * y + z * z);
+  }
 
   // TODO add some sort of check to ensure correct result
-  Vector3f Normalized() const {
+  [[nodiscard]] Vector3f Normalized() const {
     Vector3f norm = *this;
-    float len = this->Length();
+    const float len = this->Length();
 
     norm.x /= len;
     norm.y /= len;
     norm.z /= len;
 
+    // make sure this is valid
+    assert(norm.Length() != NAN);
+    // make sure its actually normalized
+    assert(norm.Length() == 1.0f);
+
     return norm;
   }
 
-  std::string ToString() const {
+  [[nodiscard]] std::string ToString() const {
     return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " +
            std::to_string(z) + ")";
   }
 
   Vector3f operator+(const Vector3f &_other) const {
-    return Vector3f(x + _other.x, y + _other.y, z + _other.z);
+    return {+_other.x, y + _other.y, z + _other.z};
   }
 
   Vector3f operator-(const Vector3f &_other) const {
-    return Vector3f(x - _other.x, y - _other.y, z - _other.z);
+    return { x - _other.x, y - _other.y, z - _other.z};
   }
 
   Vector3f operator*(const Vector3f &_other) const {
-    return Vector3f(x * _other.x, y * _other.y, z * _other.z);
+    return { x * _other.x, y * _other.y, z * _other.z};
   }
 
   Vector3f operator*(const float &_other) const {
-    return Vector3f(x * _other, y * _other, z * _other);
+    return { x * _other, y * _other, z * _other};
   }
 
-  void operator=(const Vector3f &_other) {
+  Vector3f &operator=(const Vector3f &_other) {
     x = _other.x;
     y = _other.y;
     z = _other.z;
+
+    return *this;
   }
 
   void operator+=(const Vector3f &_other) {
@@ -186,13 +212,13 @@ struct Vector3i : Vector<3, int> {
     z = 0.0f;
   }
 
-  Vector3i(int _xyz) {
+  explicit Vector3i(const int _xyz) {
     x = _xyz;
     y = _xyz;
     z = _xyz;
   }
 
-  Vector3i(int _x, int _y, int _z) {
+  Vector3i(const int _x, const int _y, const int _z) {
     x = _x;
     y = _y;
     z = _z;
@@ -208,52 +234,45 @@ struct Vector3i : Vector<3, int> {
 
 public:
   static Vector3i Cross(const Vector3i &_a, const Vector3i &_b) {
-    return Vector3i(_a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
-                    _a.x * _b.y - _a.y * _b.x);
+    return {
+      _a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
+            _a.x * _b.y - _a.y * _b.x};
   }
   static float Dot(const Vector3i &_a, const Vector3i &_b) {
-    return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
+    return static_cast<float>(_a.x * _b.x + _a.y * _b.y + _a.z * _b.z);
   }
 
-  int Length() const { return Mathf::Sqrt(x * x + y * y + z * z); }
-
-  // TODO add some sort of check to ensure correct result
-  Vector3i Normalized() const {
-    Vector3i norm = *this;
-    int len = this->Length();
-
-    norm.x /= len;
-    norm.y /= len;
-    norm.z /= len;
-
-    return norm;
+  [[nodiscard]] float Length() const {
+    return Mathf::Sqrt(static_cast<float>(x * x + y * y + z * z));
   }
 
-  std::string ToString() const {
+  [[nodiscard]] std::string ToString() const {
     return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " +
            std::to_string(z) + ")";
   }
 
   Vector3i operator+(const Vector3i &_other) const {
-    return Vector3i(x + _other.x, y + _other.y, z + _other.z);
+    return { x + _other.x, y + _other.y, z + _other.z};
   }
 
   Vector3i operator-(const Vector3i &_other) const {
-    return Vector3i(x - _other.x, y - _other.y, z - _other.z);
+    return { x - _other.x, y - _other.y, z - _other.z};
   }
 
   Vector3i operator*(const Vector3i &_other) const {
-    return Vector3i(x * _other.x, y * _other.y, z * _other.z);
+    return { x * _other.x, y * _other.y, z * _other.z};
   }
 
   Vector3i operator*(const int &_other) const {
-    return Vector3i(x * _other, y * _other, z * _other);
+    return { x * _other, y * _other, z * _other};
   }
 
-  void operator=(const Vector3i &_other) {
+  Vector3i &operator=(const Vector3i &_other) {
     x = _other.x;
     y = _other.y;
     z = _other.z;
+
+    return *this;
   }
 
   void operator+=(const Vector3i &_other) {
@@ -281,12 +300,12 @@ struct Vector2f : Vector<2, float> {
     y = 0.0f;
   }
 
-  Vector2f(float _xy) {
+  explicit Vector2f(const float _xy) {
     x = _xy;
     y = _xy;
   }
 
-  Vector2f(float _x, float _y) {
+  Vector2f(const float _x, const float _y) {
     x = _x;
     y = _y;
   }
@@ -304,18 +323,18 @@ public:
   }
 
   static Vector2f Lerp(const Vector2f &_a, const Vector2f &_b, float _t) {
-    float newX = _a.x + _t * (_b.x - _a.x);
-    float newY = _a.y + _t * (_b.y - _a.y);
+    const float newX = _a.x + _t * (_b.x - _a.x);
+    const float newY = _a.y + _t * (_b.y - _a.y);
 
-    return Vector2f(newX, newY);
+    return {newX, newY};
   }
 
-  float Length() const { return Mathf::Sqrt(x * x + y * y); }
+  [[nodiscard]] float Length() const { return Mathf::Sqrt(x * x + y * y); }
 
   // TODO add some sort of check to ensure correct result
-  Vector2f Normalized() const {
+  [[nodiscard]] Vector2f Normalized() const {
     Vector2f norm = *this;
-    float len = this->Length();
+    const float len = this->Length();
 
     norm.x /= len;
     norm.y /= len;
@@ -323,29 +342,31 @@ public:
     return norm;
   }
 
-  std::string ToString() const {
+  [[nodiscard]] std::string ToString() const {
     return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
   }
 
   Vector2f operator+(const Vector2f &_other) const {
-    return Vector2f(x + _other.x, y + _other.y);
+    return { x + _other.x, y + _other.y};
   }
 
   Vector2f operator-(const Vector2f &_other) const {
-    return Vector2f(x - _other.x, y - _other.y);
+    return { x - _other.x, y - _other.y};
   }
 
   Vector2f operator*(const Vector2f &_other) const {
-    return Vector2f(x * _other.x, y * _other.y);
+    return { x * _other.x, y * _other.y};
   }
 
   Vector2f operator*(const float &_other) const {
-    return Vector2f(x * _other, y * _other);
+    return { x * _other, y * _other};
   }
 
-  void operator=(const Vector2f &_other) {
+  Vector2f &operator=(const Vector2f &_other) {
     x = _other.x;
     y = _other.y;
+
+    return *this;
   }
 
   void operator+=(const Vector2f &_other) {
@@ -371,12 +392,12 @@ struct Vector2i : Vector<2, int> {
     y = 0.0f;
   }
 
-  Vector2i(int _xy) {
+  explicit Vector2i(const int _xy) {
     x = _xy;
     y = _xy;
   }
 
-  Vector2i(int _x, int _y) {
+  Vector2i(const int _x, const int _y) {
     x = _x;
     y = _y;
   }
@@ -393,43 +414,37 @@ public:
     return _a.x * _b.x + _a.y * _b.y;
   }
 
-  float Length() const { return Mathf::Sqrt(x * x + y * y); }
+  [[nodiscard]] float Length() const {
+    return Mathf::Sqrt(static_cast<float>(x * x + y * y));
+  }
 
-  // TODO add some sort of check to ensure correct result
-  // TODO figure out if you can normalize an integer vector
-  // Vector2f Normalized() const {
-  //   Vector2f norm = *this;
-  //   float len = this->Length();
-
-  //   norm.x /= len;
-  //   norm.y /= len;
-
-  //   return norm;
-  // }
-
-  std::string ToString() const {
+  [[nodiscard]] std::string ToString() const {
     return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
   }
 
   Vector2i operator+(const Vector2i &_other) const {
-    return Vector2i(x + _other.x, y + _other.y);
+    return { x + _other.x, y + _other.y};
   }
 
   Vector2i operator-(const Vector2i &_other) const {
-    return Vector2i(x - _other.x, y - _other.y);
+    return { x - _other.x, y - _other.y};
   }
 
   Vector2i operator*(const Vector2i &_other) const {
-    return Vector2i(x * _other.x, y * _other.y);
+    return { x * _other.x, y * _other.y};
   }
 
   Vector2i operator*(const float &_other) const {
-    return Vector2i(x * _other, y * _other);
+    return {
+      static_cast<int>(static_cast<float>(x) * _other),
+            static_cast<int>(static_cast<float>(y) * _other)};
   }
 
-  void operator=(const Vector2i &_other) {
+  Vector2i &operator=(const Vector2i &_other) {
     x = _other.x;
     y = _other.y;
+
+    return *this;
   }
 
   void operator+=(const Vector2i &_other) {
@@ -449,13 +464,13 @@ public:
 
 template <uint R, uint C> struct Matrix {
 
-  float data[R * C];
+  float data[R * C] { };
 
   static constexpr uint ROWS = R;
   static constexpr uint COLUMNS = C;
   static constexpr uint ENTRIES = R * C;
 
-  Matrix(bool identity = false) {
+  explicit Matrix(const bool identity = false) {
     Zero();
     if (identity) {
       Identity();
@@ -486,24 +501,18 @@ template <uint R, uint C> struct Matrix {
     }
   }
 
-  bool IsSquareMatrix() const { return COLUMNS == ROWS; }
+  static bool IsSquareMatrix() { return COLUMNS == ROWS; }
 
   // ! not entirely happy with calling the 4th arg "major" as i dont think its
-  // ! intirely accurate (as in if its columns major use ROWS, if row major use
+  // ! entirely accurate (as in if its columns major use ROWS, if row major use
   // ! COLUMNS).
-  float GetEntry(uint cIdx, uint rIdx, uint major = ROWS) const {
+  [[nodiscard]] float GetEntry(const uint cIdx, const uint rIdx,
+                               const uint major = ROWS) const {
     if (cIdx > COLUMNS) {
-      // Logger::LOG("There are only " + ToString(COLUMNS) + " (highest index: "
-      // +
-      //             ToString(COLUMNS - 1) + ") columns in this matrix! Column "
-      //             + ToString(cIdx) + " is out of bounds!");
       return 0.0f;
     }
 
     if (rIdx > ROWS) {
-      // Logger::LOG("There are only " + ToString(ROWS) + " (highest index: " +
-      //             ToString(ROWS - 1) + ") rows in this matrix! Row " +
-      //             ToString(rIdx) + " is out of bounds!");
       return 0.0f;
     }
 
@@ -512,10 +521,11 @@ template <uint R, uint C> struct Matrix {
 
   /* !
    * not entirely happy with calling the 4th arg "major" as i dont think its
-   * intirely accurate (as in if its columns major use ROWS, if row major use
+   * entirely accurate (as in if its columns major use ROWS, if row major use
    * COLUMNS).
    */
-  void SetEntry(uint cIdx, uint rIdx, float value, uint major = ROWS) {
+  void SetEntry(const uint cIdx, const uint rIdx, float value,
+                const uint major = ROWS) {
     if (cIdx > COLUMNS) {
       // Logger::LOG("There are only " + ToString(COLUMNS) + " (highest index: "
       // +
@@ -534,8 +544,8 @@ template <uint R, uint C> struct Matrix {
     data[rIdx + major * cIdx] = value;
   }
 
-  std::string ToString() const {
-    std::string out = "";
+  [[nodiscard]] std::string ToString() const {
+    std::string out;
 
     for (int row = 0; row < ROWS; row++) {
       out += "[ ";
@@ -585,10 +595,16 @@ template <uint R, uint C> struct Matrix {
     return out;
   }
 
-  void operator=(const Matrix<R, C> &other) {
+  Matrix &operator=(const Matrix<R, C> &other) {
+    if (this == other) {
+      return *this;
+    }
+
     for (int i = 0; i < 16; i++) {
       this->data[i] = other.data[i];
     }
+
+    return *this;
   }
 
   float &operator[](uint i) {
@@ -616,9 +632,6 @@ template <uint R, uint C> struct Matrix {
 
     static_assert(R == 4 && C == 4,
                   "This function only works with 4x4 matrices!");
-
-    // Logger::ASSERT(R == 4 && C == 4,
-    //                "This function only works with 4x4 matrices!");
 
     Identity();
 
@@ -649,9 +662,9 @@ template <uint R, uint C> struct Matrix {
     // This function only works with 4x4 matrices!
     assert(R == 4 && C == 4);
 
-    Vector3f fwd = (target - eye).Normalized(); // forward
-    Vector3f rht = Vector3f::Cross(fwd, eyeUp); // right
-    Vector3f up = Vector3f::Cross(rht, fwd);    // up
+    const Vector3f fwd = (target - eye).Normalized(); // forward
+    const Vector3f rht = Vector3f::Cross(fwd, eyeUp); // right
+    const Vector3f up = Vector3f::Cross(rht, fwd);    // up
 
     Identity();
     SetEntry(0, 0, rht.x);
@@ -672,12 +685,14 @@ template <uint R, uint C> struct Matrix {
   }
 
   // https://stackoverflow.com/a/53366142 - Pmsmm Nov 18, 2018 (CC BY-SA 4.0)
-  void Perspective(float fovDeg, float aspect, float near, float far) {
+  void Perspective(const float fovDeg, const float aspect, const float near,
+                   const float far) {
     // This function only works with 4x4 matrices!
-    static_assert(R == 4 && C == 4, "shitty");
+    static_assert(R == 4 && C == 4,
+                  "This function only works with 4x4 matrices!");
 
-    float fovRad = Mathf::ToRadians(fovDeg);
-    float tanFov = Mathf::Tan(fovRad / 2);
+    const float fovRad = Mathf::ToRadians(fovDeg);
+    const float tanFov = Mathf::Tan(fovRad / 2);
 
     Zero();
     SetEntry(0, 0, 1 / (aspect * tanFov));
@@ -728,4 +743,3 @@ template <uint R, uint C> struct Matrix {
 
 } // namespace vsm
 
-#endif
