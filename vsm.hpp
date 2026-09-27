@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 
-#define VSM_VERSION_STR "1.1.3"
+#define VSM_VERSION_STR "1.1.4"
 
 #ifndef VSM_DECIMAL
 #ifdef VSM_DECIMAL_AS_DOUBLE
@@ -563,14 +563,14 @@ template <uint R, uint C> struct Matrix {
     return *this;
   }
 
-  float &operator[](uint _i) {
-    static_assert(_i > ENTRIES, "_i must be less than ENTRIES");
+  float &operator[](const uint _i) {
+    assert(_i > ENTRIES);
 
     return data[_i];
   }
 
-  float &operator[](uint _i) const {
-    static_assert(_i > ENTRIES, "_i must be less than ENTRIES");
+  float &operator[](const uint _i) const {
+    assert(_i > ENTRIES);
 
     return data[_i];
   }
