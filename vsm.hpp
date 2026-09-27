@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <cstdarg>
 #include <iostream>
 #include <string>
 
@@ -141,10 +142,19 @@ struct Mathf {
 
 template <uint S, typename T> struct Vec {
   using TType = T;
+  std::array<T, S> arr;
 
   Vec() {
     static_assert(std::is_fundamental_v<T> && typeid(T) != typeid(bool),
                   "T can only be a float, double, or an integer!");
+  }
+
+  explicit Vec(std::array<T, S> _list) : arr(_list) {}
+
+  explicit Vec(const T _values) {
+    for (uint i{0}; i < S; i++) {
+      arr[i] = _values;
+    }
   }
 
   virtual ~Vec() = default;
@@ -153,7 +163,7 @@ template <uint S, typename T> struct Vec {
   [[nodiscard]] Decimal Length() const {
     Decimal result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result += arr[i] * arr[i];
     }
 
@@ -178,7 +188,7 @@ template <uint S, typename T> struct Vec {
   [[nodiscard]] std::string ToString() const {
     std::string result{"("};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.append(
           std::to_string(arr[i]) +
           (i != S - 1
@@ -198,26 +208,26 @@ template <uint S, typename T> struct Vec {
   //
   // }
 
-  T &operator[](const uint i) {
+  T &operator[](const uint _i) {
     // index out of bounds check
-    assert(i < S);
+    assert(_i < S);
 
-    return arr[i];
+    return arr[_i];
   }
 
-  const T &operator[](const uint i) const {
+  const T &operator[](const uint _i) const {
     // index out of bounds check
-    assert(i < S);
+    assert(_i < S);
 
-    return arr[i];
+    return arr[_i];
   }
 
   // ------ Addition ------
 
   Vec<S, T> operator+(const Vec<S, T> &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] + _other.arr[i];
     }
 
@@ -225,9 +235,9 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> operator+(const Decimal &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] + _other;
     }
 
@@ -235,7 +245,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator+=(const Vec<S, T> &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] += _other[i];
     }
 
@@ -243,7 +253,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator+=(const Decimal &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] += _other;
     }
 
@@ -253,9 +263,9 @@ template <uint S, typename T> struct Vec {
   // ------ Subtraction ------
 
   Vec<S, T> operator-(const Vec<S, T> &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] - _other.arr[i];
     }
 
@@ -263,9 +273,9 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> operator-(const Decimal &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] - _other;
     }
 
@@ -273,7 +283,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator-=(const Vec<S, T> &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] -= _other[i];
     }
 
@@ -281,7 +291,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator-=(const Decimal &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] -= _other;
     }
 
@@ -291,9 +301,9 @@ template <uint S, typename T> struct Vec {
   // ------ Multiplication ------
 
   Vec<S, T> operator*(const Vec<S, T> &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] * _other.arr[i];
     }
 
@@ -301,9 +311,9 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> operator*(const Decimal &_other) const {
-    Vec<S, T> result;
+    Vec<S, T> result{};
 
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       result.arr[i] = arr[i] * _other;
     }
 
@@ -311,7 +321,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator*=(const Vec<S, T> &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] *= _other[i];
     }
 
@@ -319,7 +329,7 @@ template <uint S, typename T> struct Vec {
   }
 
   Vec<S, T> &operator*=(const Decimal &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] *= _other;
     }
 
@@ -332,7 +342,7 @@ template <uint S, typename T> struct Vec {
 
   // unsure about this function, may cause issues?? not sure (27/09/26)
   Vec<S, T> &operator=(const Decimal &_other) {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       arr[i] = _other;
     }
 
@@ -340,7 +350,7 @@ template <uint S, typename T> struct Vec {
   }
 
   bool operator==(const Vec<S, T> &_other) const {
-    for (uint i = 0; i < S; i++) {
+    for (uint i{0}; i < S; i++) {
       if (arr[i] != _other.arr[i]) {
         return false;
       }
@@ -349,8 +359,6 @@ template <uint S, typename T> struct Vec {
     return true;
   }
 
-protected:
-  std::array<T, S> arr{};
 };
 
 /*
@@ -359,9 +367,9 @@ protected:
  */
 // ------ Vec3f ------
 struct Vec3f : Vec<3, float> {
-  float &x = arr[0];
-  float &y = arr[1];
-  float &z = arr[2];
+  float &x{arr[0]};
+  float &y{arr[1]};
+  float &z{arr[2]};
 
   Vec3f() = default;
   Vec3f(const Vec<3, float> &_other) : Vec<3, float>(_other) {}
@@ -383,14 +391,14 @@ struct Vec3f : Vec<3, float> {
             _a.x * _b.y - _a.y * _b.x};
   }
   static Decimal Dot(const Vec3f &_a, const Vec3f &_b) {
-    return static_cast<Decimal>(_a.x * _b.x + _a.y * _b.y + _a.z * _b.z);
+    return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
   }
 };
 
 // ------ Vec2f ------
 struct Vec2f : Vec<2, float> {
-  float &x = arr[0];
-  float &y = arr[1];
+  float &x{arr[0]};
+  float &y{arr[1]};
 
   Vec2f() = default;
   Vec2f(const Vec<2, float> &_other) : Vec<2, float>(_other) {}
@@ -430,21 +438,21 @@ public:
 // ------ Matrix ------
 template <uint R, uint C> struct Matrix {
 
-  float data[R * C] { };
+  std::array<float, R * C> data{};
 
-  static constexpr uint ROWS = R;
-  static constexpr uint COLUMNS = C;
-  static constexpr uint ENTRIES = R * C;
+  static constexpr uint ROWS{R};
+  static constexpr uint COLUMNS{C};
+  static constexpr uint ENTRIES{R * C};
 
-  explicit Matrix(const bool identity = false) {
+  explicit Matrix(const bool _identity = false) {
     Zero();
-    if (identity) {
+    if (_identity) {
       Identity();
     }
   }
 
   void Zero() {
-    for (int i = 0; i < ENTRIES; i++) {
+    for (uint i{0}; i < ENTRIES; i++) {
       data[i] = 0;
     }
   }
@@ -454,8 +462,8 @@ template <uint R, uint C> struct Matrix {
       return;
     }
 
-    int n = 0;
-    for (int i = 0; i < ENTRIES; i++) {
+    int n{0};
+    for (uint i{0}; i < ENTRIES; i++) {
       if (n == 0) {
         data[i] = 1;
         n = COLUMNS;
@@ -473,17 +481,12 @@ template <uint R, uint C> struct Matrix {
    *  entirely accurate (as in if its columns major use ROWS, if row major use
    *  COLUMNS).
    */
-  [[nodiscard]] float GetEntry(const uint cIdx, const uint rIdx,
-                               const uint major = ROWS) const {
-    if (cIdx > COLUMNS) {
-      return 0.0f;
-    }
+  [[nodiscard]] float GetEntry(const uint _cIdx, const uint _rIdx,
+                               const uint _major = ROWS) const {
+    static_assert(_cIdx < COLUMNS, "_cIdx must be less than COLUMNS");
+    static_assert(_rIdx < ROWS, "_rIdx must be less than ROWS");
 
-    if (rIdx > ROWS) {
-      return 0.0f;
-    }
-
-    return data[rIdx + major * cIdx];
+    return data[_rIdx + _major * _cIdx];
   }
 
   /* !
@@ -491,28 +494,16 @@ template <uint R, uint C> struct Matrix {
    * entirely accurate (as in if its columns major use ROWS, if row major use
    * COLUMNS).
    */
-  void SetEntry(const uint cIdx, const uint rIdx, float value,
-                const uint major = ROWS) {
-    if (cIdx > COLUMNS) {
-      // Logger::LOG("There are only " + ToString(COLUMNS) + " (highest index: "
-      // +
-      //             ToString(COLUMNS - 1) + ") columns in this matrix! Column "
-      //             + ToString(cIdx) + " is out of bounds!");
-      return;
-    }
+  void SetEntry(const uint _cIdx, const uint _rIdx, float _value,
+                const uint _major = ROWS) {
+    static_assert(_cIdx < COLUMNS, "_cIdx must be less than COLUMNS");
+    static_assert(_rIdx < ROWS, "_rIdx must be less than ROWS");
 
-    if (rIdx > ROWS) {
-      // Logger::LOG("There are only " + ToString(ROWS) + " (highest index: " +
-      //             ToString(ROWS - 1) + ") rows in this matrix! Row " +
-      //             ToString(rIdx) + " is out of bounds!");
-      return;
-    }
-
-    data[rIdx + major * cIdx] = value;
+    data[_rIdx + _major * _cIdx] = _value;
   }
 
   [[nodiscard]] std::string ToString() const {
-    std::string out;
+    std::string out{};
 
     for (int row = 0; row < ROWS; row++) {
       out += "[ ";
@@ -525,8 +516,8 @@ template <uint R, uint C> struct Matrix {
     return out;
   }
 
-  Matrix operator*(float _other) {
-    Matrix<R, C> out;
+  Matrix operator*(const float _other) {
+    Matrix<R, C> out{};
 
     for (int i = 0; i < ENTRIES; i++) {
       out.data[i] = data[i] * _other;
@@ -546,12 +537,12 @@ template <uint R, uint C> struct Matrix {
 
     // resulting matrix has the amount of columns of the right matrix and
     // the amount of rows the left matrix
-    Matrix<ROWS, C2> out;
+    Matrix<ROWS, C2> out{};
 
     for (int row = 0; row < ROWS; row++) {
       for (int col = 0; col < _other.COLUMNS; col++) {
         out.data[row * ROWS + col] = 0;
-        float sum = 0.0f;
+        float sum{0.0f};
         for (int i = 0; i < COLUMNS; i++) {
           sum += data[i * ROWS + col] * _other.data[row * _other.ROWS + i];
         }
@@ -567,70 +558,64 @@ template <uint R, uint C> struct Matrix {
       return *this;
     }
 
-    for (int i = 0; i < 16; i++) {
+    for (uint i{0}; i < ENTRIES; i++) {
       this->data[i] = _other.data[i];
     }
 
     return *this;
   }
 
-  float &operator[](uint i) {
-    if (i < 0)
-      return data[0];
-    if (i > ENTRIES)
-      return data[0];
+  float &operator[](uint _i) {
+    static_assert(_i > ENTRIES, "_i must be less than ENTRIES");
 
-    return data[i];
+    return data[_i];
   }
 
-  float &operator[](uint i) const {
-    if (i < 0)
-      return data[0];
-    if (i > ENTRIES)
-      return data[0];
+  float &operator[](uint _i) const {
+    static_assert(_i > ENTRIES, "_i must be less than ENTRIES");
 
-    return data[i];
+    return data[_i];
   }
 
   /* ------------ 4x4 Matrix Specific Functions ------------ */
 
-  void Transform(const Vec3f &position, const Vec3f &rotation,
-                 const Vec3f &scale) {
+  void Transform(const Vec3f &_position, const Vec3f &_rotation,
+                 const Vec3f &_scale) {
 
     static_assert(R == 4 && C == 4,
                   "This function only works with 4x4 matrices!");
 
     Identity();
 
-    Matrix<4, 4> pos(true);
-    pos.SetTranslation(position);
-    Matrix<4, 4> rot(true);
-    rot.SetRotation(rotation);
-    Matrix<4, 4> sca(true);
-    sca.SetScale(scale);
+    Matrix<4, 4> pos{true};
+    pos.SetTranslation(_position);
+    Matrix<4, 4> rot{true};
+    rot.SetRotation(_rotation);
+    Matrix<4, 4> sca{true};
+    sca.SetScale(_scale);
 
     *this = (pos * rot * sca);
   }
 
-  void SetTranslation(const Vec3f &position) {
+  void SetTranslation(const Vec3f &_position) {
     // This function only works with 4x4 matrices!
     assert(R == 4 && C == 4);
 
     Identity();
 
-    SetEntry(3, 0, position.x);
-    SetEntry(3, 1, position.y);
-    SetEntry(3, 2, position.z);
+    SetEntry(3, 0, _position.x);
+    SetEntry(3, 1, _position.y);
+    SetEntry(3, 2, _position.z);
   }
 
   // https://github.com/g-truc/glm/blob/6f14f4792a0cde5d0cf2c910506724d61cb95834/glm/ext/matrix_transform.inl#L153
-  void LookAt(const Vec3f &eye, const Vec3f &target, const Vec3f &eyeUp) {
+  void LookAt(const Vec3f &_eye, const Vec3f &_target, const Vec3f &_eyeUp) {
     // This function only works with 4x4 matrices!
     assert(R == 4 && C == 4);
 
-    const Vec3f fwd = (target - eye).Normalized(); // forward
-    const Vec3f rht = Vec3f::Cross(fwd, eyeUp);    // right
-    const Vec3f up = Vec3f::Cross(rht, fwd);       // up
+    const Vec3f fwd{(_target - _eye).Normalized()}; // forward
+    const Vec3f rht{Vec3f::Cross(fwd, _eyeUp)};     // right
+    const Vec3f up{Vec3f::Cross(rht, fwd)};         // up
 
     Identity();
     SetEntry(0, 0, rht.x);
@@ -645,54 +630,54 @@ template <uint R, uint C> struct Matrix {
     SetEntry(2, 1, -fwd.y);
     SetEntry(2, 2, -fwd.z);
 
-    SetEntry(3, 0, -Vec3f::Dot(rht, eye));
-    SetEntry(3, 1, -Vec3f::Dot(up, eye));
-    SetEntry(3, 2, Vec3f::Dot(fwd, eye));
+    SetEntry(3, 0, -Vec3f::Dot(rht, _eye));
+    SetEntry(3, 1, -Vec3f::Dot(up, _eye));
+    SetEntry(3, 2, Vec3f::Dot(fwd, _eye));
   }
 
   // https://stackoverflow.com/a/53366142 - Pmsmm Nov 18, 2018 (CC BY-SA 4.0)
-  void Perspective(const float fovDeg, const float aspect, const float near,
-                   const float far) {
+  void Perspective(const float _fovDeg, const float _aspect, const float _near,
+                   const float _far) {
     // This function only works with 4x4 matrices!
     static_assert(R == 4 && C == 4,
                   "This function only works with 4x4 matrices!");
 
-    const float fovRad = Mathf::ToRadians(fovDeg);
-    const float tanFov = Mathf::Tan(fovRad / 2);
+    const float fovRad{Mathf::ToRadians(_fovDeg)};
+    const float tanFov{Mathf::Tan(fovRad / 2)};
 
     Zero();
-    SetEntry(0, 0, 1 / (aspect * tanFov));
+    SetEntry(0, 0, 1 / (_aspect * tanFov));
     SetEntry(1, 1, 1 / tanFov);
-    SetEntry(2, 2, -((far + near) / (far - near)));
+    SetEntry(2, 2, -((_far + _near) / (_far - _near)));
     SetEntry(2, 3, -1);
-    SetEntry(3, 2, -((2 * far * near) / (far - near)));
+    SetEntry(3, 2, -((2 * _far * _near) / (_far - _near)));
   }
 
   /* ------------ 3x3 and larger Matrix Specific Functions ------------ */
 
-  void SetRotation(const Vec3f &rotation) {
+  void SetRotation(const Vec3f &_rotation) {
     // This function only works with 3x3 or larger matrices!
     assert(R >= 3 && C >= 3);
 
     Matrix<ROWS, COLUMNS> xRot(true);
-    xRot.SetEntry(1, 1, Mathf::Cos(rotation.x));
-    xRot.SetEntry(2, 1, -Mathf::Sin(rotation.x));
+    xRot.SetEntry(1, 1, Mathf::Cos(_rotation.x));
+    xRot.SetEntry(2, 1, -Mathf::Sin(_rotation.x));
 
-    xRot.SetEntry(1, 2, Mathf::Sin(rotation.x));
-    xRot.SetEntry(2, 2, Mathf::Cos(rotation.x));
+    xRot.SetEntry(1, 2, Mathf::Sin(_rotation.x));
+    xRot.SetEntry(2, 2, Mathf::Cos(_rotation.x));
 
     Matrix<ROWS, COLUMNS> yRot(true);
-    yRot.SetEntry(0, 0, Mathf::Cos(rotation.y));
-    yRot.SetEntry(2, 0, Mathf::Sin(rotation.y));
+    yRot.SetEntry(0, 0, Mathf::Cos(_rotation.y));
+    yRot.SetEntry(2, 0, Mathf::Sin(_rotation.y));
 
-    yRot.SetEntry(0, 2, -Mathf::Sin(rotation.y));
-    yRot.SetEntry(2, 2, Mathf::Cos(rotation.y));
+    yRot.SetEntry(0, 2, -Mathf::Sin(_rotation.y));
+    yRot.SetEntry(2, 2, Mathf::Cos(_rotation.y));
 
     Matrix<ROWS, COLUMNS> zRot(true);
-    zRot.SetEntry(0, 0, Mathf::Cos(rotation.z));
-    zRot.SetEntry(1, 0, -Mathf::Sin(rotation.z));
-    zRot.SetEntry(0, 1, Mathf::Sin(rotation.z));
-    zRot.SetEntry(1, 1, Mathf::Cos(rotation.z));
+    zRot.SetEntry(0, 0, Mathf::Cos(_rotation.z));
+    zRot.SetEntry(1, 0, -Mathf::Sin(_rotation.z));
+    zRot.SetEntry(0, 1, Mathf::Sin(_rotation.z));
+    zRot.SetEntry(1, 1, Mathf::Cos(_rotation.z));
 
     *this = (xRot * yRot * zRot);
   }

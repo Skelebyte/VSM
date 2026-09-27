@@ -4,17 +4,9 @@
 using namespace vsm;
 
 int main() {
-  const Vec2f v1(1.14f, 2.14f);
-  Vec2f v2(0.14f, 2.14f);
 
-  Vec<5, float> v5{};
-  v5[0] = 1;
-  v5[1] = 2;
-  v5[2] = 3;
-  v5[3] = 4;
-  v5[4] = 5;
-
-  std::cout << v5.Length() << std::endl;
+  const Vec<4, float> v1{1.14f};
+  Vec<4, float> v2{{0.14f, 2.14f, 3.04f, 5.92f}};
 
   v2 -= v1;
 
