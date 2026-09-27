@@ -4,17 +4,21 @@
 using namespace vsm;
 
 int main() {
+  const Vec2f v1(1.14f, 2.14f);
+  Vec2f v2(0.14f, 2.14f);
 
-  Decimal d;
+  Vec<5, float> v5{};
+  v5[0] = 1;
+  v5[1] = 2;
+  v5[2] = 3;
+  v5[3] = 4;
+  v5[4] = 5;
 
-  const Vector3f v1(1.14f, 2.14f, 3.14f);
-  Vector3f v2(0.14f, 2.14f, 3.14f);
+  std::cout << v5.Length() << std::endl;
 
   v2 -= v1;
 
-  for (auto i = 0; i < 3; i++) {
-    std::cout << v2.Data()[i] << std::endl;
-  }
+  std::cout << v2.ToString() << std::endl;
 
   return 0;
 }

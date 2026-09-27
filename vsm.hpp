@@ -10,8 +10,12 @@
 #ifndef VSM_DECIMAL
 #ifdef VSM_DECIMAL_AS_DOUBLE
 #define VSM_DECIMAL double
+#define VSM_DECIMAL_ZERO 0.0
+#define VSM_DECIMAL_ONE 1.0
 #else
 #define VSM_DECIMAL float
+#define VSM_DECIMAL_ZERO 0.0f
+#define VSM_DECIMAL_ONE 1.0f
 #endif
 #endif
 
@@ -135,112 +139,214 @@ struct Mathf {
   }
 };
 
-template <uint S, typename T = float> struct Vector {
+template <uint S, typename T> struct Vec {
   using TType = T;
 
-  Vector() {
+  Vec() {
     static_assert(std::is_fundamental_v<T> && typeid(T) != typeid(bool),
                   "T can only be a float, double, or an integer!");
   }
 
-  virtual ~Vector() = default;
+  virtual ~Vec() = default;
   T *Data() { return arr.data(); }
 
+  [[nodiscard]] Decimal Length() const {
+    Decimal result{};
+
+    for (uint i = 0; i < S; i++) {
+      result += arr[i] * arr[i];
+    }
+
+    return Mathf::Sqrt(result);
+  }
+
+  [[nodiscard]] Vec<S, T> Normalized() const {
+    Vec<S, T> result{};
+    const Decimal len{Length()};
+    for (uint i{0}; i < S; i++) {
+      result[i] = static_cast<Decimal>(arr[i]) / len;
+    }
+
+    // make sure this is valid
+    assert(result.Length() != NAN);
+    // make sure its actually normalized
+    assert(result.Length() == VSM_DECIMAL_ONE);
+
+    return result;
+  }
+
+  [[nodiscard]] std::string ToString() const {
+    std::string result{"("};
+
+    for (uint i = 0; i < S; i++) {
+      result.append(
+          std::to_string(arr[i]) +
+          (i != S - 1
+               ? ", "
+               : "") // should prevent a , from appearing after the last number
+      );
+    }
+
+    result.append(")");
+
+    return result;
+  }
+
+  // [[nodiscard]] Decimal Dot() {
+  //   Decimal result {};
+  //
+  //
+  // }
+
   T &operator[](const uint i) {
-    static_assert(i < S, "Index out of bounds");
+    // index out of bounds check
+    assert(i < S);
 
     return arr[i];
   }
 
-  T &operator[](const uint i) const {
-    static_assert(i < S, "Index out of bounds");
+  const T &operator[](const uint i) const {
+    // index out of bounds check
+    assert(i < S);
 
     return arr[i];
   }
 
-  // TODO would like to avoid returning a local variable
-  Vector<S, T> operator+(const Vector<S, T> &_other) const {
-    Vector<S, T> result;
+  // ------ Addition ------
 
-    for (int i = 0; i < S; i++) {
+  Vec<S, T> operator+(const Vec<S, T> &_other) const {
+    Vec<S, T> result;
+
+    for (uint i = 0; i < S; i++) {
       result.arr[i] = arr[i] + _other.arr[i];
     }
 
     return result;
   }
 
-  // TODO would like to avoid returning a local variable
-  template <typename T2> Vector<S, T> operator+(const T2 _other) const {
-    static_assert(
-        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
-        "This function only works if T2 is a float, double, or an integer!");
-    const T castValue = static_cast<T>(_other);
+  Vec<S, T> operator+(const Decimal &_other) const {
+    Vec<S, T> result;
 
-    Vector<S, T> result;
-
-    for (int i = 0; i < S; i++) {
-      result.arr[i] = arr[i] + castValue;
+    for (uint i = 0; i < S; i++) {
+      result.arr[i] = arr[i] + _other;
     }
 
     return result;
   }
 
-  // TODO would like to avoid returning a local variable
-  Vector<S, T> operator-(const Vector<S, T> &_other) const {
-    Vector<S, T> result;
+  Vec<S, T> &operator+=(const Vec<S, T> &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] += _other[i];
+    }
 
-    for (int i = 0; i < S; i++) {
+    return *this;
+  }
+
+  Vec<S, T> &operator+=(const Decimal &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] += _other;
+    }
+
+    return *this;
+  }
+
+  // ------ Subtraction ------
+
+  Vec<S, T> operator-(const Vec<S, T> &_other) const {
+    Vec<S, T> result;
+
+    for (uint i = 0; i < S; i++) {
       result.arr[i] = arr[i] - _other.arr[i];
     }
 
     return result;
   }
 
-  // TODO would like to avoid returning a local variable
-  template <typename T2> Vector<S, T> operator-(const T2 _other) const {
-    static_assert(
-        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
-        "This function only works if T2 is a float, double, or an integer!");
+  Vec<S, T> operator-(const Decimal &_other) const {
+    Vec<S, T> result;
 
-    const T castValue = static_cast<T>(_other);
-
-    Vector<S, T> result;
-
-    for (int i = 0; i < S; i++) {
-      result.arr[i] = arr[i] - castValue;
+    for (uint i = 0; i < S; i++) {
+      result.arr[i] = arr[i] - _other;
     }
 
     return result;
   }
 
-  Vector<S, T> &operator-=(const Vector<S, T> &_other) {
-    for (int i = 0; i < S; i++) {
-      arr[i] -= _other.arr[i];
+  Vec<S, T> &operator-=(const Vec<S, T> &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] -= _other[i];
     }
 
     return *this;
   }
 
-  template <typename T2> Vector<S, T> &operator-=(const T2 _other) {
-    static_assert(
-        std::is_fundamental_v<T> && typeid(T) != typeid(bool),
-        "This function only works if T2 is a float, double, or an integer!");
-
-    const T castValue = static_cast<T>(_other);
-
-    for (int i = 0; i < S; i++) {
-      arr[i] -= castValue;
+  Vec<S, T> &operator-=(const Decimal &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] -= _other;
     }
 
     return *this;
   }
 
-  Vector<S, T> &operator=(const Vector<S, T> &_other) {
-    for (int i = 0; i < S; i++) {
-      arr[i] = _other.arr[i];
+  // ------ Multiplication ------
+
+  Vec<S, T> operator*(const Vec<S, T> &_other) const {
+    Vec<S, T> result;
+
+    for (uint i = 0; i < S; i++) {
+      result.arr[i] = arr[i] * _other.arr[i];
+    }
+
+    return result;
+  }
+
+  Vec<S, T> operator*(const Decimal &_other) const {
+    Vec<S, T> result;
+
+    for (uint i = 0; i < S; i++) {
+      result.arr[i] = arr[i] * _other;
+    }
+
+    return result;
+  }
+
+  Vec<S, T> &operator*=(const Vec<S, T> &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] *= _other[i];
     }
 
     return *this;
+  }
+
+  Vec<S, T> &operator*=(const Decimal &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] *= _other;
+    }
+
+    return *this;
+  }
+
+  // ------ ------
+
+  Vec<S, T> &operator=(const Vec<S, T> &_other) = default;
+
+  // unsure about this function, may cause issues?? not sure (27/09/26)
+  Vec<S, T> &operator=(const Decimal &_other) {
+    for (uint i = 0; i < S; i++) {
+      arr[i] = _other;
+    }
+
+    return *this;
+  }
+
+  bool operator==(const Vec<S, T> &_other) const {
+    for (uint i = 0; i < S; i++) {
+      if (arr[i] != _other.arr[i]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
 protected:
@@ -251,363 +357,62 @@ protected:
  * TODO attempt to find a workaround for specifying x y z and so on each new
  *  vector struct made.
  */
-struct Vector3f : Vector<3, float> {
-  TType &x, &y, &z;
+// ------ Vec3f ------
+struct Vec3f : Vec<3, float> {
+  float &x = arr[0];
+  float &y = arr[1];
+  float &z = arr[2];
 
-  Vector3f() : x(arr[0]), y(arr[1]), z(arr[2]) {}
+  Vec3f() = default;
+  Vec3f(const Vec<3, float> &_other) : Vec<3, float>(_other) {}
 
-  explicit Vector3f(const TType _xyz) : Vector3f() {
+  explicit Vec3f(const float _xyz) {
     x = _xyz;
     y = _xyz;
     z = _xyz;
   }
 
-  Vector3f(const TType _x, const TType _y, const TType _z) : Vector3f() {
+  Vec3f(const float _x, const float _y, const float _z) {
     x = _x;
     y = _y;
     z = _z;
   }
 
-  static Vector3f Cross(const Vector3f &_a, const Vector3f &_b) {
+  static Vec3f Cross(const Vec3f &_a, const Vec3f &_b) {
     return {_a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
             _a.x * _b.y - _a.y * _b.x};
   }
-  static float Dot(const Vector3f &_a, const Vector3f &_b) {
-    return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
-  }
-
-  [[nodiscard]]  float Length() const {
-    return Mathf::Sqrt(x * x + y * y + z * z);
-  }
-
-
-  [[nodiscard]] Vector3f Normalized() const {
-    Vector3f norm = *this;
-    const float len = this->Length();
-
-    norm.x /= len;
-    norm.y /= len;
-    norm.z /= len;
-
-    // make sure this is valid
-    assert(norm.Length() != NAN);
-    // make sure its actually normalized
-    assert(norm.Length() == 1.0f);
-
-    return norm;
-  }
-
-  [[nodiscard]] std::string ToString() const {
-    return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " +
-           std::to_string(z) + ")";
-  }
-
-  // Vector3f operator+(const Vector3f &_other) const {
-  //   return { +_other.x, y + _other.y, z + _other.z };
-  // }
-
-  // template <typename T> Vector3f operator+(const T _other) const {
-  //   static_assert(
-  //       std::is_fundamental_v<T> && typeid(T) != typeid(bool),
-  //       "This function only works if T is a float, double, or an integer!");
-  //   const T castValue = static_cast<T>(_other);
-  //   return {x + castValue, y + castValue, z + castValue};
-  // }
-
-  /*
-   * TODO finish these new functions for the vector you can add subtract and
-   *  multiply by scalar values
-   */
-
-  // template <typename T> Vector3f operator-(const T _other) const {
-  //   static_assert(
-  //       std::is_fundamental_v<T> && typeid(T) != typeid(bool),
-  //       "This function only works if T is a float, double, or an integer!");
-  //   const T castValue = static_cast<T>(_other);
-  //   return {x - castValue, y - castValue, z - castValue};
-  // }
-
-  // Vector3f operator-(const Vector3f &_other) const {
-  //   return { x - _other.x, y - _other.y, z - _other.z};
-  // }
-
-  Vector3f operator*(const Vector3f &_other) const {
-    return { x * _other.x, y * _other.y, z * _other.z};
-  }
-
-  Vector3f operator*(const float &_other) const {
-    return { x * _other, y * _other, z * _other};
-  }
-
-  Vector3f &operator=(const Vector3f &_other) {
-    x = _other.x;
-    y = _other.y;
-    z = _other.z;
-
-    return *this;
-  }
-
-  void operator+=(const Vector3f &_other) {
-    x += _other.x;
-    y += _other.y;
-    z += _other.z;
-  }
-
-  void operator-=(const Vector3f &_other) {
-
-    std::cout << "breaking const!!!"<<std::endl;
-    x -= _other.x;
-    y -= _other.y;
-    z -= _other.z;
-  }
-
-  bool operator==(const Vector3f &_other) const {
-    return (x == _other.x && y == _other.y && z == _other.z);
+  static Decimal Dot(const Vec3f &_a, const Vec3f &_b) {
+    return static_cast<Decimal>(_a.x * _b.x + _a.y * _b.y + _a.z * _b.z);
   }
 };
 
-struct Vector3i : Vector<3, int> {
-  TType &x, &y, &z;
+// ------ Vec2f ------
+struct Vec2f : Vec<2, float> {
+  float &x = arr[0];
+  float &y = arr[1];
 
-  Vector3i() : x(arr[0]), y(arr[1]), z(arr[2]) {}
+  Vec2f() = default;
+  Vec2f(const Vec<2, float> &_other) : Vec<2, float>(_other) {}
 
-  explicit Vector3i(const TType _xyz) : Vector3i() {
-    x = _xyz;
-    y = _xyz;
-    z = _xyz;
-  }
-
-  Vector3i(const TType _x, const TType _y, const TType _z) : Vector3i() {
-    x = _x;
-    y = _y;
-    z = _z;
-  }
-
-  static Vector3i Cross(const Vector3i &_a, const Vector3i &_b) {
-    return {
-      _a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
-            _a.x * _b.y - _a.y * _b.x};
-  }
-  static float Dot(const Vector3i &_a, const Vector3i &_b) {
-    return static_cast<float>(_a.x * _b.x + _a.y * _b.y + _a.z * _b.z);
-  }
-
-  [[nodiscard]] float Length() const {
-    return Mathf::Sqrt(static_cast<float>(x * x + y * y + z * z));
-  }
-
-  [[nodiscard]] std::string ToString() const {
-    return "(" + std::to_string(x) + ", " + std::to_string(y) + ", " +
-           std::to_string(z) + ")";
-  }
-
-  Vector3i operator+(const Vector3i &_other) const {
-    return { x + _other.x, y + _other.y, z + _other.z};
-  }
-
-  Vector3i operator-(const Vector3i &_other) const {
-    return { x - _other.x, y - _other.y, z - _other.z};
-  }
-
-  Vector3i operator*(const Vector3i &_other) const {
-    return { x * _other.x, y * _other.y, z * _other.z};
-  }
-
-  Vector3i operator*(const int &_other) const {
-    return { x * _other, y * _other, z * _other};
-  }
-
-  Vector3i &operator=(const Vector3i &_other) {
-    x = _other.x;
-    y = _other.y;
-    z = _other.z;
-
-    return *this;
-  }
-
-  void operator+=(const Vector3i &_other) const {
-
-    x += _other.x;
-    y += _other.y;
-    z += _other.z;
-  }
-
-  void operator-=(const Vector3i &_other) const {
-    x -= _other.x;
-    y -= _other.y;
-    z -= _other.z;
-  }
-
-  bool operator==(const Vector3i &_other) const {
-    return (x == _other.x && y == _other.y && z == _other.z);
-  }
-};
-
-struct Vector2f : Vector<2, float> {
-  TType x, y;
-
-  Vector2f() {
-    x = 0.0f;
-    y = 0.0f;
-  }
-
-  explicit Vector2f(const TType _xy) {
+  explicit Vec2f(const float _xy) {
     x = _xy;
     y = _xy;
   }
 
-  Vector2f(const TType _x, const TType _y) {
+  Vec2f(const float _x, const float _y) {
     x = _x;
     y = _y;
   }
 
-  // float *GetData() override {
-  //   data[0] = x;
-  //   data[1] = y;
-  //
-  //   return data;
-  // }
-
 public:
-  static float Dot(const Vector2f &_a, const Vector2f &_b) {
-    return _a.x * _b.x + _a.y * _b.y;
-  }
-
-  [[nodiscard]] float Length() const { return Mathf::Sqrt(x * x + y * y); }
-
-
-  [[nodiscard]] Vector2f Normalized() const {
-    Vector2f norm = *this;
-    const float len = this->Length();
-
-    norm.x /= len;
-    norm.y /= len;
-
-    return norm;
-  }
-
-  [[nodiscard]] std::string ToString() const {
-    return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
-  }
-
-  Vector2f operator+(const Vector2f &_other) const {
-    return { x + _other.x, y + _other.y};
-  }
-
-  Vector2f operator-(const Vector2f &_other) const {
-    return { x - _other.x, y - _other.y};
-  }
-
-  Vector2f operator*(const Vector2f &_other) const {
-    return { x * _other.x, y * _other.y};
-  }
-
-  Vector2f operator*(const float &_other) const {
-    return { x * _other, y * _other};
-  }
-
-  Vector2f &operator=(const Vector2f &_other) {
-    x = _other.x;
-    y = _other.y;
-
-    return *this;
-  }
-
-  void operator+=(const Vector2f &_other) {
-    x += _other.x;
-    y += _other.y;
-  }
-
-  void operator-=(const Vector2f &_other) {
-    x -= _other.x;
-    y -= _other.y;
-  }
-
-  bool operator==(const Vector2f &_other) const {
-    return (x == _other.x && y == _other.y);
-  }
-};
-
-struct Vector2i : Vector<2, int> {
-  int x, y;
-
-  Vector2i() {
-    x = 0.0f;
-    y = 0.0f;
-  }
-
-  explicit Vector2i(const int _xy) {
-    x = _xy;
-    y = _xy;
-  }
-
-  Vector2i(const int _x, const int _y) {
-    x = _x;
-    y = _y;
-  }
-
-  // int *GetData() override {
-  //   data[0] = x;
-  //   data[1] = y;
-  //
-  //   return data;
+  // static float Dot(const Vec2f &_a, const Vec2f &_b) {
+  //   return static_cast<Decimal>(_a.x * _b.x + _a.y * _b.y);
   // }
-
-public:
-  static float Dot(const Vector2f &_a, const Vector2f &_b) {
-    return _a.x * _b.x + _a.y * _b.y;
-  }
-
-  [[nodiscard]] float Length() const {
-    return Mathf::Sqrt(static_cast<float>(x * x + y * y));
-  }
-
-  [[nodiscard]] std::string ToString() const {
-    return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
-  }
-
-  Vector2i operator+(const Vector2i &_other) const {
-    return { x + _other.x, y + _other.y};
-  }
-
-  Vector2i operator-(const Vector2i &_other) const {
-    return { x - _other.x, y - _other.y};
-  }
-
-  Vector2i operator*(const Vector2i &_other) const {
-    return { x * _other.x, y * _other.y};
-  }
-
-  Vector2i operator*(const float &_other) const {
-    return {
-      static_cast<int>(static_cast<float>(x) * _other),
-            static_cast<int>(static_cast<float>(y) * _other)};
-  }
-
-  Vector2i &operator=(const Vector2i &_other) {
-    x = _other.x;
-    y = _other.y;
-
-    return *this;
-  }
-
-  void operator+=(const Vector2i &_other) {
-    x += _other.x;
-    y += _other.y;
-  }
-
-  void operator-=(const Vector2i &_other) {
-    x -= _other.x;
-    y -= _other.y;
-  }
-
-  bool operator==(const Vector2i &_other) const {
-    return (x == _other.x && y == _other.y);
-  }
 };
 
 // TODO quaternions
-// struct Quaternion : Vector<4, float> {
+// struct Quaternion : Vec<4, float> {
 //   TType x, y, z, w;
 //
 //   Quaternion() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
@@ -622,6 +427,7 @@ public:
 //   }
 // };
 
+// ------ Matrix ------
 template <uint R, uint C> struct Matrix {
 
   float data[R * C] { };
@@ -788,8 +594,8 @@ template <uint R, uint C> struct Matrix {
 
   /* ------------ 4x4 Matrix Specific Functions ------------ */
 
-  void Transform(const Vector3f &position, const Vector3f &rotation,
-                 const Vector3f &scale) {
+  void Transform(const Vec3f &position, const Vec3f &rotation,
+                 const Vec3f &scale) {
 
     static_assert(R == 4 && C == 4,
                   "This function only works with 4x4 matrices!");
@@ -806,7 +612,7 @@ template <uint R, uint C> struct Matrix {
     *this = (pos * rot * sca);
   }
 
-  void SetTranslation(const Vector3f &position) {
+  void SetTranslation(const Vec3f &position) {
     // This function only works with 4x4 matrices!
     assert(R == 4 && C == 4);
 
@@ -818,14 +624,13 @@ template <uint R, uint C> struct Matrix {
   }
 
   // https://github.com/g-truc/glm/blob/6f14f4792a0cde5d0cf2c910506724d61cb95834/glm/ext/matrix_transform.inl#L153
-  void LookAt(const Vector3f &eye, const Vector3f &target,
-              const Vector3f &eyeUp) {
+  void LookAt(const Vec3f &eye, const Vec3f &target, const Vec3f &eyeUp) {
     // This function only works with 4x4 matrices!
     assert(R == 4 && C == 4);
 
-    const Vector3f fwd = (target - eye).Normalized(); // forward
-    const Vector3f rht = Vector3f::Cross(fwd, eyeUp); // right
-    const Vector3f up = Vector3f::Cross(rht, fwd);    // up
+    const Vec3f fwd = (target - eye).Normalized(); // forward
+    const Vec3f rht = Vec3f::Cross(fwd, eyeUp);    // right
+    const Vec3f up = Vec3f::Cross(rht, fwd);       // up
 
     Identity();
     SetEntry(0, 0, rht.x);
@@ -840,9 +645,9 @@ template <uint R, uint C> struct Matrix {
     SetEntry(2, 1, -fwd.y);
     SetEntry(2, 2, -fwd.z);
 
-    SetEntry(3, 0, -Vector3f::Dot(rht, eye));
-    SetEntry(3, 1, -Vector3f::Dot(up, eye));
-    SetEntry(3, 2, Vector3f::Dot(fwd, eye));
+    SetEntry(3, 0, -Vec3f::Dot(rht, eye));
+    SetEntry(3, 1, -Vec3f::Dot(up, eye));
+    SetEntry(3, 2, Vec3f::Dot(fwd, eye));
   }
 
   // https://stackoverflow.com/a/53366142 - Pmsmm Nov 18, 2018 (CC BY-SA 4.0)
@@ -865,7 +670,7 @@ template <uint R, uint C> struct Matrix {
 
   /* ------------ 3x3 and larger Matrix Specific Functions ------------ */
 
-  void SetRotation(const Vector3f &rotation) {
+  void SetRotation(const Vec3f &rotation) {
     // This function only works with 3x3 or larger matrices!
     assert(R >= 3 && C >= 3);
 
@@ -891,7 +696,7 @@ template <uint R, uint C> struct Matrix {
 
     *this = (xRot * yRot * zRot);
   }
-  void SetScale(const Vector3f &scale) {
+  void SetScale(const Vec3f &scale) {
     // This function only works with 3x3 or larger matrices!
     assert(R >= 3 && C >= 3);
 
