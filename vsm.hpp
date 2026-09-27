@@ -1,9 +1,8 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cmath>
-#include <cstdarg>
-#include <iostream>
 #include <string>
 
 #define VSM_VERSION_STR "1.1.3"
@@ -358,7 +357,6 @@ template <uint S, typename T> struct Vec {
 
     return true;
   }
-
 };
 
 /*
