@@ -4,8 +4,10 @@
 using namespace vsm;
 
 int main() {
-  Matrix<4, 4> a{};
-  a[17] = 1;
+  const Vec<3, float> a{{1, 2, 3}};
+  const Vec3f b{4, 5, 6};
+
+  Vec<3, float> c{a.Cross(b)};
 
   return 0;
 }
