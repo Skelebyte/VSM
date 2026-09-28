@@ -5,7 +5,7 @@
 #include <cmath>
 #include <string>
 
-#define VSM_VERSION_STR "1.1.4"
+#define VSM_VERSION_STR "1.1.5"
 
 #ifndef VSM_DECIMAL
 #ifdef VSM_DECIMAL_AS_DOUBLE
@@ -148,7 +148,8 @@ template <uint S, typename T> struct Vec {
                   "T can only be a float, double, or an integer!");
   }
 
-  explicit Vec(std::array<T, S> _list) : arr(_list) {}
+  // i think theres some conversion happening when this func gets called...
+  Vec(const std::array<T, S> &_list) : arr(_list) {}
 
   explicit Vec(const T _values) {
     for (uint i{0}; i < S; i++) {
@@ -201,11 +202,24 @@ template <uint S, typename T> struct Vec {
     return result;
   }
 
-  // [[nodiscard]] Decimal Dot() {
-  //   Decimal result {};
-  //
-  //
-  // }
+  [[nodiscard]] Decimal Dot(const Vec<S, T> &_other) const {
+    Decimal result{};
+
+    for (uint i{0}; i < S; i++) {
+      result += arr[i] * _other.arr[i];
+    }
+
+    return result;
+  }
+
+  [[nodiscard]] Vec<3, T> Cross(const Vec<3, T> &_other) const {
+    static_assert(S == 3,
+                  "This function only works on Vec types where S is 3.");
+
+    return {{arr[1] * _other[2] - arr[2] * _other[1],
+             arr[2] * _other[0] - arr[0] * _other[2],
+             arr[0] * _other[1] - arr[1] * _other[0]}};
+  }
 
   T &operator[](const uint _i) {
     // index out of bounds check
@@ -370,7 +384,7 @@ struct Vec3f : Vec<3, float> {
   float &z{arr[2]};
 
   Vec3f() = default;
-  Vec3f(const Vec<3, float> &_other) : Vec<3, float>(_other) {}
+  explicit Vec3f(const Vec<3, float> &_other) : Vec<3, float>(_other) {}
 
   explicit Vec3f(const float _xyz) {
     x = _xyz;
@@ -383,14 +397,6 @@ struct Vec3f : Vec<3, float> {
     y = _y;
     z = _z;
   }
-
-  static Vec3f Cross(const Vec3f &_a, const Vec3f &_b) {
-    return {_a.y * _b.z - _a.z * _b.y, _a.z * _b.x - _a.x * _b.z,
-            _a.x * _b.y - _a.y * _b.x};
-  }
-  static Decimal Dot(const Vec3f &_a, const Vec3f &_b) {
-    return _a.x * _b.x + _a.y * _b.y + _a.z * _b.z;
-  }
 };
 
 // ------ Vec2f ------
@@ -399,7 +405,7 @@ struct Vec2f : Vec<2, float> {
   float &y{arr[1]};
 
   Vec2f() = default;
-  Vec2f(const Vec<2, float> &_other) : Vec<2, float>(_other) {}
+  explicit Vec2f(const Vec<2, float> &_other) : Vec<2, float>(_other) {}
 
   explicit Vec2f(const float _xy) {
     x = _xy;
@@ -410,11 +416,6 @@ struct Vec2f : Vec<2, float> {
     x = _x;
     y = _y;
   }
-
-public:
-  // static float Dot(const Vec2f &_a, const Vec2f &_b) {
-  //   return static_cast<Decimal>(_a.x * _b.x + _a.y * _b.y);
-  // }
 };
 
 // TODO quaternions
@@ -524,8 +525,7 @@ template <uint R, uint C> struct Matrix {
     return out;
   }
 
-  // https://stackoverflow.com/a/22149009 -  M Oehm Mar 3, 2014. (CC
-  // BY-SA 3.0)
+  // https://stackoverflow.com/a/22149009 -  M Oehm Mar 3, 2014. (CC BY-SA 3.0)
   template <uint R2 = R, uint C2 = 1>
   Matrix<R2, C2> operator*(const Matrix<C, C2> &_other) {
 
@@ -612,8 +612,8 @@ template <uint R, uint C> struct Matrix {
     assert(R == 4 && C == 4);
 
     const Vec3f fwd{(_target - _eye).Normalized()}; // forward
-    const Vec3f rht{Vec3f::Cross(fwd, _eyeUp)};     // right
-    const Vec3f up{Vec3f::Cross(rht, fwd)};         // up
+    const Vec3f rht{fwd.Cross(_eyeUp)};             // right
+    const Vec3f up{rht.Cross(fwd)};                 // up
 
     Identity();
     SetEntry(0, 0, rht.x);
@@ -628,9 +628,9 @@ template <uint R, uint C> struct Matrix {
     SetEntry(2, 1, -fwd.y);
     SetEntry(2, 2, -fwd.z);
 
-    SetEntry(3, 0, -Vec3f::Dot(rht, _eye));
-    SetEntry(3, 1, -Vec3f::Dot(up, _eye));
-    SetEntry(3, 2, Vec3f::Dot(fwd, _eye));
+    SetEntry(3, 0, -rht.Dot(_eye));
+    SetEntry(3, 1, -up.Dot(_eye));
+    SetEntry(3, 2, fwd.Dot(_eye));
   }
 
   // https://stackoverflow.com/a/53366142 - Pmsmm Nov 18, 2018 (CC BY-SA 4.0)
